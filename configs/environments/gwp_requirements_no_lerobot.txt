@@ -1,0 +1,55 @@
+# Derived from src/giga-world-policy/requirements.txt with ONE change:
+#   lerobot==0.4.4 is removed.
+#
+# Reason (verified, not assumed): lerobot 0.4.4 declares
+#     diffusers>=0.27.2,<0.36.0
+# while GigaWorld-Policy pins diffusers==0.36.0, so pip reports
+# "ResolutionImpossible: Cannot install -r requirements.txt (line 15) and
+# diffusers==0.36.0". Neither side may be bent here (a different diffusers
+# changes the Wan/MoT runtime; a different lerobot changes the v3 dataset
+# writer), so LeRobot lives in its own environment
+# (envs/robotwin_gwp_data, see scripts/03_env_data.sh) and this policy env only
+# needs the inference stack.
+#
+# Nothing on the executed policy path imports lerobot:
+#   * scripts/inference_openloop.py      -> av, pandas, torch, diffusers, transformers
+#   * scripts/compute_wam_task_norm.py   -> pandas, numpy
+#   * scripts/51_compute_t5_diffusers.py -> transformers, torch
+# (scripts/train.py and lerobot-backed dataset classes are training-only and out
+# of scope for this deployment.)
+
+# Install torch/torchvision/torchaudio from the cu126 build first; see README.md.
+
+accelerate==1.13.0
+av==15.0.0
+beautifulsoup4==4.12.3
+decord==0.6.0
+deepspeed==0.17.4
+diffusers==0.36.0
+einops==0.8.0
+ftfy==6.3.1
+huggingface-hub==0.34.3
+imageio==2.37.0
+lmdb==1.6.2
+lpips==0.1.4
+matplotlib==3.11.0
+numpy==2.4.6
+nvidia-ml-py==12.570.86
+opencv-python==4.11.0.86
+pandas==2.2.3
+paramiko==3.5.0
+peft==0.17.1
+pillow==11.3.0
+pyarrow==21.0.0
+pytorch-fid==0.3.0
+pyzmq==27.0.0
+regex==2024.11.6
+safetensors==0.5.2
+scikit-image==0.25.1
+terminaltables==3.1.10
+tokenizers==0.21.4
+torchao==0.14.1
+transformers==4.54.1
+tyro==0.9.13
+wandb==0.24.2
+xformers==0.0.31.post1

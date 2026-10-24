@@ -1,0 +1,38 @@
+# Closed-loop evaluation parameters for the native Aloha-AgileX task.
+#
+# Measured 2026-10-23: the interface passes and the zero-shot policy fails. Both
+# facts are configured here so a rerun reproduces the same conditions instead of
+# re-tuning until something succeeds.
+
+specification: docs/specifications/v0.2-robotwin-native.md
+environment: configs/environments/robotwin_aloha_agilex.yaml
+
+policy:
+  name: GWP05Native
+  server:
+    host: 127.0.0.1
+    port: 11444
+    timeout_ms: 120000
+  adapter:
+    protocol: ws
+    port: 19100
+  action_chunk: 48        # what the policy returns
+  execute_action_chunk: 8 # executed before re-planning
+  prompt_mode: embedding  # fixed T5 embedding, matching the open-loop path
+
+evaluation:
+  seeds: [100000, 100002, 100003]
+  episodes_per_seed: 1
+  step_budget: 400        # 50 chunks x 8 steps
+  record_video: true
+  record_action_trace: true
+
+normalization:
+  # Two conventions were run on purpose. They produce the same failure shape,
+  # which is the evidence that the failure is not a normalization bug.
+  default:
+    convention: minmax_q01_q99
+    stats: ${ARTIFACTS_DIR}/norm_stats_delta.json
+  cpp_equivalent:
+    convention: zscore
+    stats: ${ARTIFACTS_DIR}/norm_stats_delta_zscore_equiv.json

@@ -1,15 +1,36 @@
+# Native target record for RoboTwin 2.0 / beat_block_hammer.
+#
+# Values marked (measured) come from the 2026-10-23 run and are recorded in
+# docs/experiments/robotwin-gwp-native-results.md; everything else is the
+# upstream task configuration.
+
 environment:
   name: robotwin2
   task: beat_block_hammer
   split: demo_clean
   embodiment: aloha_agilex
-  action_dimension: 14
+
+  action_dimension: 14        # measured: 6 + 1 + 6 + 1
+  action_horizon: 48          # measured: what the policy returns per call
+  state_dimension: 14         # measured: same packing order as the action
+  control_hz: 15              # measured: save_freq in the task config
+  step_budget: 400            # measured: the evaluator's cap, 50 chunks x 8
+
+  cameras:                    # measured: what the simulator actually emits
+    - {name: cam_head, width: 320, height: 240, type: D435}
+    - {name: cam_left_wrist, width: 320, height: 240, type: D435}
+    - {name: cam_right_wrist, width: 320, height: 240, type: D435}
+
   source_dir_env: ROBOTWIN_SOURCE_DIR
   assets_dir_env: ROBOTWIN_ASSETS_DIR
   data_dir_env: ROBOTWIN_DATA_DIR
 
-evaluation:
-  seeds: [0, 1, 2]
-  episodes_per_seed: 1
+# The dataset writer renames one camera; the adapter maps it explicitly.
+lerobot_feature_names:
+  cam_head: cam_high
+  cam_left_wrist: cam_left_wrist
+  cam_right_wrist: cam_right_wrist
 
-# This is a starting record of the native target, not a validated runtime config.
+evaluation:
+  seeds: [100000, 100002, 100003]   # the three closed-loop seeds actually run
+  episodes_per_seed: 1

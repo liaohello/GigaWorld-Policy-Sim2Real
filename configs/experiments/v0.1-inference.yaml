@@ -1,5 +1,33 @@
+# V0.1 inference reproduction — parameters actually used.
+#
+# Paths are expressed through environment variables (see .env.example) so this
+# file stays machine-independent.
+
 specification: docs/specifications/v0.1-inference.md
 model_config: configs/models/gwp05.yaml
-observation_source: null # Set to a local recorded sample outside Git.
+
+observation_source:
+  dataset: ${DATASETS_DIR}/robotwin_gwp/beat_block_hammer_50_v3
+  episode: 0
+  frame: 0
+  text_embedding: ${DATASETS_DIR}/robotwin_gwp/beat_block_hammer_50_v3/t5_embedding/episode_000000.pt
+
+normalization:
+  # Statistics computed from the 50 converted episodes.
+  file: ${ARTIFACTS_DIR}/norm_stats_delta.json
+  convention: minmax_q01_q99
+
+inference:
+  device: cuda:0
+  precision: bf16
+  torch_compile: false
+  action_channels: 16   # from the checkpoint, not from the script default of 32
+  action_horizon: 48
+
+measurement:
+  warmup_calls: 10
+  timed_calls: 30
+  report_percentiles: [50, 95]
+
 output_dir_env: RUNS_DIR
 random_seed: 0
