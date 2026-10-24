@@ -20,12 +20,16 @@ Why this exists (all four items were verified against the shipped code):
 4. The patch records the resolved device/dtype of every pipeline component so
    the placement is auditable instead of assumed.
 
-Idempotent: it always starts from the pristine copy stored under
-``patch/orig/`` and rewrites the target file from scratch.
+Idempotent: the pristine upstream file is kept **outside Git** under
+``$LOCKS_DIR/upstream/`` (a full copy of upstream source is not redistributable),
+identified by SHA-256 in ``patch/upstream-manifest.json``. ``--check`` classifies
+the target as pristine/patched/unknown without needing that copy at all.
 
 Usage:
-  python scripts/setup/patch_gwp.py --write
-  python scripts/setup/patch_gwp.py --check
+  python3 scripts/setup/patch_gwp.py --check     # exit 2 if anchors do not match
+  python3 scripts/setup/patch_gwp.py --write     # back up, then apply
+  python3 scripts/setup/patch_gwp.py --restore   # put the pristine file back
+  python3 scripts/setup/patch_gwp.py --diff      # regenerate patch/*.diff
 """
 from __future__ import annotations
 
