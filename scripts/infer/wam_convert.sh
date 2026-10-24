@@ -10,6 +10,8 @@
 # The merge is a pure container change (shards -> one F32 pickle); no arithmetic.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 REPO_ROOT=${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 WAM=${WAM_CPP_SOURCE_DIR:?set WAM_CPP_SOURCE_DIR}
 ENVS=${ENVS_DIR:?set ENVS_DIR}

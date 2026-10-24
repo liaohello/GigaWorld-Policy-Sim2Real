@@ -4,6 +4,8 @@
 # (never into the shipped data/ directory, which stays read-only for this stage).
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 REPO_ROOT=${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 RT=${ROBOTWIN_SOURCE_DIR:?set ROBOTWIN_SOURCE_DIR}
 ENVS=${ENVS_DIR:?set ENVS_DIR}

@@ -23,9 +23,16 @@ import traceback
 
 import numpy as np
 
-WS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RT = os.path.join(WS, "src", "RoboTwin")
-sys.path.insert(0, os.path.join(WS, "scripts"))
+REPO_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.insert(0, os.path.join(REPO_ROOT, "scripts", "lib"))
+
+import env as project_env  # noqa: E402
+
+project_env.load_env()
+# RoboTwin is an external checkout; never a subdirectory of this repository.
+RT = project_env.require("ROBOTWIN_SOURCE_DIR")["ROBOTWIN_SOURCE_DIR"]
 sys.path.insert(0, RT)
 
 import rt_args  # noqa: E402

@@ -31,8 +31,17 @@ import time
 
 import numpy as np
 
-WS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GWP = os.path.join(WS, "src", "giga-world-policy")
+REPO_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+sys.path.insert(0, os.path.join(REPO_ROOT, "scripts", "lib"))
+
+import env as project_env  # noqa: E402
+
+project_env.load_env()
+# The GWP checkout supplies both the wire format and the dataset loader; it is
+# an input to this script, not part of the repository.
+GWP = project_env.require("GWP_SOURCE_DIR")["GWP_SOURCE_DIR"]
 
 
 def pct(values, p):

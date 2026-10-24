@@ -12,6 +12,8 @@
 #   bash scripts/evaluate/closed_loop.sh 3 0        # 3 episodes starting at seed 0
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 COUNT=${1:-1}
 SEED=${2:-0}
 

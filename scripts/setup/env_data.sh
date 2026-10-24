@@ -8,6 +8,8 @@
 # lerobot import dependency, and no GPU work happens here.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 CONDA=${CONDA_ROOT:?set CONDA_ROOT}/bin/conda
 ENVS=${ENVS_DIR:?set ENVS_DIR}
 DATA_ENV=$ENVS/robotwin_gwp_data

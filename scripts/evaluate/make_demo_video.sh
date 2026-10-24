@@ -9,6 +9,8 @@
 # 用法：bash scripts/95_make_demo_video.sh [输出路径]
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 RUNS_DIR=${RUNS_DIR:?set RUNS_DIR}
 FF=${FF:-ffmpeg}
 FONT=${FONT:-/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf}

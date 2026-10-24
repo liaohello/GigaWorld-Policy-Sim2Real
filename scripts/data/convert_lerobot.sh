@@ -11,6 +11,8 @@
 #   bash scripts/data/convert_lerobot.sh full             # all 50 episodes
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 MODE=${1:-smoke}
 FORCE=${2:-}
 

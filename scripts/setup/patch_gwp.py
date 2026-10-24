@@ -36,11 +36,31 @@ import os
 import shutil
 import sys
 
-WS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SRC = os.path.join(WS, "src", "giga-world-policy", "scripts", "inference_openloop.py")
-ORIG_DIR = os.path.join(WS, "patch", "orig")
-ORIG = os.path.join(ORIG_DIR, "inference_openloop.py")
-DIFF = os.path.join(WS, "patch", "gwp05_inference_openloop.diff")
+REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(REPO_ROOT, "scripts", "lib"))
+
+import env as project_env  # noqa: E402
+
+project_env.load_env()
+
+# The upstream checkout is an input, never a subdirectory of this repository.
+# A full copy of an upstream source file may not be redistributed here, so the
+# pristine text is kept outside Git (under $LOCKS_DIR) and identified by hash.
+SRC = os.path.join(
+    project_env.require("GWP_SOURCE_DIR")["GWP_SOURCE_DIR"],
+    "scripts",
+    "inference_openloop.py",
+)
+PRISTINE_DIR = os.path.join(
+    os.environ.get("LOCKS_DIR") or os.path.join(REPO_ROOT, "locks"), "upstream"
+)
+PRISTINE = os.path.join(PRISTINE_DIR, "inference_openloop.py")
+DIFF = os.path.join(REPO_ROOT, "patch", "gwp05_inference_openloop.diff")
+
+# sha256 of the upstream revision this patch was written against. Recorded in
+# patch/upstream-manifest.json as well; duplicated here so a mismatch can be
+# reported without reading another file.
+EXPECTED_SHA256 = "750625547d2165142828a272fefc50163ea9522dd98be6f4648a26d6dcf3e268"
 
 EDITS: list[tuple[str, str, str]] = []
 
@@ -266,57 +286,116 @@ edit(
 )
 
 
+def _state(text: str) -> str:
+    """Classify a file as `pristine`, `patched`, or `unknown`."""
+    old_ok = all(text.count(old) == 1 and new not in text for _, old, new in EDITS)
+    new_ok = all(text.count(new) == 1 and old not in text for _, old, new in EDITS)
+    if old_ok:
+        return "pristine"
+    if new_ok:
+        return "patched"
+    return "unknown"
+
+
+def _sha256(path: str) -> str:
+    import hashlib
+
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _report_mismatch() -> None:
+    if not os.path.isfile(SRC):
+        return
+    got = _sha256(SRC)
+    if got != EXPECTED_SHA256:
+        print(f"note: sha256={got}")
+        print(f"      expected {EXPECTED_SHA256} (the revision this patch was written against)")
+        print("      anchors will decide whether the patch still applies")
+
+
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--write", action="store_true")
-    ap.add_argument("--check", action="store_true")
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--check", action="store_true", help="report whether anchors still match")
+    ap.add_argument("--write", action="store_true", help="apply the patch in place")
+    ap.add_argument("--restore", action="store_true", help="restore the pristine upstream file")
+    ap.add_argument("--diff", action="store_true", help="regenerate patch/gwp05_inference_openloop.diff")
     args = ap.parse_args()
 
-    os.makedirs(ORIG_DIR, exist_ok=True)
-    if not os.path.exists(ORIG):
-        shutil.copy2(SRC, ORIG)
-        print(f"stored pristine copy: {ORIG}")
+    if not os.path.isfile(SRC):
+        print(f"missing upstream file: {SRC}")
+        print("set GWP_SOURCE_DIR to the GigaWorld-Policy checkout")
+        return 2
 
-    with open(ORIG, "r", encoding="utf-8") as f:
-        pristine = f.read()
-
-    text = pristine
-    for name, old, new in EDITS:
-        if old not in text:
-            print(f"ANCHOR MISSING [{name}] -- source does not match the expected upstream revision")
-            return 2
-        if text.count(old) != 1:
-            print(f"ANCHOR NOT UNIQUE [{name}] count={text.count(old)}")
-            return 2
-        text = text.replace(old, new)
-
-    diff = "".join(
-        difflib.unified_diff(
-            pristine.splitlines(keepends=True),
-            text.splitlines(keepends=True),
-            fromfile="a/scripts/inference_openloop.py",
-            tofile="b/scripts/inference_openloop.py",
-        )
-    )
-    os.makedirs(os.path.dirname(DIFF), exist_ok=True)
-    with open(DIFF, "w", encoding="utf-8") as f:
-        f.write(diff)
+    with open(SRC, "r", encoding="utf-8") as f:
+        current = f.read()
+    state = _state(current)
 
     if args.check:
-        with open(SRC, "r", encoding="utf-8") as f:
-            current = f.read()
-        same = current == text
-        print(f"patched_file_matches={same}")
-        return 0 if same else 1
-
-    if args.write:
-        with open(SRC, "w", encoding="utf-8") as f:
-            f.write(text)
-        print(f"patched {SRC}")
-        print(f"diff -> {DIFF} ({len(diff.splitlines())} lines)")
+        print(f"upstream={SRC}")
+        print(f"state={state}")
+        if state == "unknown":
+            _report_mismatch()
+            missing = [n for n, old, _ in EDITS if old not in current and _ not in current]
+            print(f"anchors_not_found={missing or 'partial'}")
+            return 2
         return 0
 
-    print(diff)
+    if args.restore:
+        if not os.path.isfile(PRISTINE):
+            print(f"no pristine copy at {PRISTINE}; cannot restore")
+            return 2
+        shutil.copy2(PRISTINE, SRC)
+        print(f"restored {SRC} from {PRISTINE}")
+        return 0
+
+    if args.write:
+        if state == "patched":
+            print("already patched; nothing to do")
+            return 0
+        if state != "pristine":
+            print("refusing to write: upstream text matches neither the pristine nor the patched form")
+            _report_mismatch()
+            return 2
+
+        os.makedirs(PRISTINE_DIR, exist_ok=True)
+        if not os.path.isfile(PRISTINE):
+            shutil.copy2(SRC, PRISTINE)
+            print(f"kept pristine copy outside Git: {PRISTINE}")
+
+        patched = current
+        for name, old, new in EDITS:
+            patched = patched.replace(old, new)
+        with open(SRC, "w", encoding="utf-8") as f:
+            f.write(patched)
+        print(f"patched {SRC} ({len(EDITS)} edits)")
+        state = "patched"
+        current = patched
+
+    if args.diff or args.write:
+        if not os.path.isfile(PRISTINE):
+            print("skip diff: pristine copy unavailable (it lives outside Git by design)")
+            return 0
+        with open(PRISTINE, "r", encoding="utf-8") as f:
+            pristine = f.read()
+        diff = "".join(
+            difflib.unified_diff(
+                pristine.splitlines(keepends=True),
+                current.splitlines(keepends=True),
+                fromfile="a/scripts/inference_openloop.py",
+                tofile="b/scripts/inference_openloop.py",
+            )
+        )
+        os.makedirs(os.path.dirname(DIFF), exist_ok=True)
+        with open(DIFF, "w", encoding="utf-8") as f:
+            f.write(diff)
+        print(f"diff -> {DIFF} ({len(diff.splitlines())} lines)")
+
+    if not (args.write or args.check or args.restore or args.diff):
+        ap.print_help()
     return 0
 
 

@@ -9,6 +9,8 @@
 # Idempotent: re-running overwrites only these three files.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 REPO_ROOT=${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 RT=${ROBOTWIN_SOURCE_DIR:?set ROBOTWIN_SOURCE_DIR}
 GWP=${GWP_SOURCE_DIR:?set GWP_SOURCE_DIR}

@@ -22,6 +22,13 @@ from __future__ import annotations
 
 import argparse
 import json
+import pathlib
+import sys
+
+REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "src"))
+
+from gwp_sim2real.normalization import floor_zero_std  # noqa: E402
 
 
 def main() -> int:
@@ -38,18 +45,9 @@ def main() -> int:
 
     changed = {}
     for domain in ("observation.state", "action"):
-        block = ns[domain]
-        std = list(block["std"])
-        for i in range(len(std)):
-            if i >= args.model_dim or abs(std[i]) <= args.eps:
-                if i < args.model_dim:
-                    changed.setdefault(domain, []).append(i)
-                block["mean"][i] = 0.0
-                block["std"][i] = 1.0
-                block["min"][i] = -1.0
-                block["max"][i] = 1.0
-                block["q01"][i] = -1.0
-                block["q99"][i] = 1.0
+        ns[domain], changed[domain] = floor_zero_std(
+            ns[domain], model_dim=args.model_dim, eps=args.eps
+        )
 
     data["derivation"] = (
         "zero-std / padded dims set to mean=0,std=1,bounds=+-1 so the C++ z-score "

@@ -8,6 +8,8 @@
 # numpy 1.26.4. Mixing the two would break the RoboTwin native extensions.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 CONDA=${CONDA_ROOT:?set CONDA_ROOT}/bin/conda
 ENVS=${ENVS_DIR:?set ENVS_DIR}
 POLICY_ENV=$ENVS/robotwin_gwp_policy

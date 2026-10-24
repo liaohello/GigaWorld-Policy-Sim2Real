@@ -3,6 +3,8 @@
 # RoboTwin video writing, eval video capture and LeRobot encoding.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 CONDA=${CONDA_ROOT:?set CONDA_ROOT}/bin/conda
 ENVS=${ENVS_DIR:?set ENVS_DIR}
 TOOLS_ENV=$ENVS/robotwin_gwp_tools

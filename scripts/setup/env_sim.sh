@@ -12,6 +12,8 @@
 #     archived tree already ships a complete XPolicyLab and has no .git metadata.
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 CONDA=${CONDA_ROOT:?set CONDA_ROOT}/bin/conda
 ENVS=${ENVS_DIR:?set ENVS_DIR}
 SIM_ENV=$ENVS/robotwin_gwp_sim

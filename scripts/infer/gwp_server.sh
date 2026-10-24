@@ -9,6 +9,8 @@
 #   GPU=2 bash scripts/infer/gwp_server.sh [extra args ...]
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 REPO_ROOT=${REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}
 GWP=${GWP_SOURCE_DIR:?set GWP_SOURCE_DIR}
 ENVS=${ENVS_DIR:?set ENVS_DIR}
@@ -18,7 +20,12 @@ GPU=${GPU:-2}
 
 export CHECKPOINT=${GWP_CHECKPOINT_DIR:?set GWP_CHECKPOINT_DIR}
 export BASE_MODEL=${WAN_BASE_MODEL_DIR:?set WAN_BASE_MODEL_DIR}
-export NORM_STATS=${ARTIFACTS_DIR:?set ARTIFACTS_DIR}/norm_stats_delta.json
+# Which statistics file is loaded decides the normalization convention:
+#   norm_stats_delta.json               q01/q99 min-max (script default, matches
+#                                       the official open-loop client)
+#   norm_stats_delta_zscore_equiv.json  z-score-equivalent bounds (matches wam.cpp)
+# Both were run; the closed-loop report says which produced which numbers.
+export NORM_STATS=${NORM_STATS:-${ARTIFACTS_DIR:?set ARTIFACTS_DIR}/norm_stats_delta.json}
 export DATA_PATH=$DATASET
 export DATA_IDX=${DATA_IDX:-0}
 export FIXED_T5_PATH=$DATASET/t5_embedding/episode_000000.pt

@@ -11,6 +11,8 @@
 # Output: $ARTIFACTS_DIR/norm_stats_delta.json
 set -euo pipefail
 
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/env.sh"
+
 ENVS=${ENVS_DIR:?set ENVS_DIR}
 PY=$ENVS/robotwin_gwp_policy/bin/python
 GWP=${GWP_SOURCE_DIR:?set GWP_SOURCE_DIR}
