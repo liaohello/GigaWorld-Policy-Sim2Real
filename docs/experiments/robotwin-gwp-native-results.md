@@ -54,6 +54,7 @@ pose. The conversion preserves that offset.
 | Embedding files | 50 × `[512, 4096]` float32 |
 | Nonzero rows vs declared length | equal for every file |
 | Distinct instructions | 46 |
+| Repo conversion vs the statistics used in the E runs | identical: `q01`/`q99` match at `atol = 0` on the real 32-dim file |
 
 ## D — Open loop
 
