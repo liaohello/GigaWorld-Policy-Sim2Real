@@ -1,0 +1,206 @@
+--- a/scripts/inference_openloop.py
++++ b/scripts/inference_openloop.py
+@@ -854,6 +854,9 @@
+     compile_mode="reduce-overhead",
+     compile_fullgraph=False,
+     compile_scope="action-blocks",
++    text_encoder_device="cpu",
++    output_dir=None,
++    timing_jsonl=None,
+ ):
+     checkpoint = _require_nonempty_path(checkpoint, "--checkpoint")
+     base_model = _require_nonempty_path(base_model, "--base-model")
+@@ -861,6 +864,9 @@
+     data_paths = _resolve_data_paths(data_paths)
+ 
+     _, ref_image_save_dir = get_output_dirs_from_checkpoint(checkpoint)
++    if output_dir:
++        # Keep run artefacts inside this project, never in the shared model tree.
++        ref_image_save_dir = os.path.join(output_dir, "ref_images")
+     os.makedirs(ref_image_save_dir, exist_ok=True)
+     print(f"Saving ref images to: {ref_image_save_dir}")
+ 
+@@ -876,8 +882,75 @@
+     transformer.eval()
+     scheduler = FlowMatchEulerDiscreteScheduler(shift=5.0)
+     pipe = WAPipeline.from_pretrained(base_model, vae=vae, transformer=transformer, scheduler=scheduler, torch_dtype=torch_dtype)
+-    pipe.to(device=device, dtype=torch_dtype)
++
++    # ---- explicit component placement (patched) --------------------------
++    # NOTE: the stock `pipe.to(device)` also moved the UMT5 text encoder onto
++    # the GPU. Fixed-embedding inference never executes it, and 11.36 GB of
++    # idle weights do not fit next to the MoT transformer + VAE on a 24 GiB
++    # card, so only the modules that actually run are moved.
++    _te_device = (text_encoder_device or "cpu").strip()
++    if _te_device == "auto":
++        _te_device = device
++    _te = getattr(pipe, "text_encoder", None)
++    if _te is not None:
++        _te.to(_te_device)
++    for _name in ("vae", "transformer", "transformer_2"):
++        _mod = getattr(pipe, _name, None)
++        if _mod is not None:
++            _mod.to(device=device, dtype=torch_dtype)
++    _device_report = {}
++    for _name in ("vae", "text_encoder", "transformer", "transformer_2", "image_encoder"):
++        _mod = getattr(pipe, _name, None)
++        if _mod is None:
++            _device_report[_name] = None
++            continue
++        try:
++            _p = next(_mod.parameters())
++            _device_report[_name] = {"device": str(_p.device), "dtype": str(_p.dtype)}
++        except StopIteration:
++            _device_report[_name] = {"device": "no-params", "dtype": None}
++    print("Component placement: " + json.dumps(_device_report, sort_keys=True), flush=True)
++    if str(device).startswith("cuda") and torch.cuda.is_available():
++        print(
++            "GPU after load: allocated=%.2f GB reserved=%.2f GB"
++            % (torch.cuda.memory_allocated() / 1e9, torch.cuda.memory_reserved() / 1e9),
++            flush=True,
++        )
++    if output_dir:
++        os.makedirs(output_dir, exist_ok=True)
++        with open(os.path.join(output_dir, "device_placement.json"), "w", encoding="utf-8") as _f:
++            json.dump(_device_report, _f, indent=2)
++    pipe._device_report = _device_report
+     pipe._model_dtype_name = str(torch_dtype)
++
++    # Width of the model action/state block, from the checkpoint itself.
++    # prepare_latents/inference hardcode 32, but Giga-World-Policy-0.5 declares
++    # in_action_channels=16 and its state_encoder/action_encoder in_proj weights
++    # are [num_embodiments, 16, 128]: feeding 32 raises a bmm shape error.
++    _action_width = int(getattr(pipe.transformer.config, "in_action_channels", 32))
++    print(f"Model action/state width: {_action_width}", flush=True)
++
++    _compute_device = torch.device(device)
++    _base_cls = type(pipe)
++
++    class _PlacedPipeline(_base_cls):
++        """Same pipeline, execution device pinned to the compute device.
++
++        DiffusionPipeline.device resolves from the first nn.Module in the
++        signature, which is the CPU-resident text encoder after the placement
++        above; without this the VAE would be fed CPU tensors.
++        """
++
++        @property
++        def device(self):
++            return _compute_device
++
++        @property
++        def _execution_device(self):
++            return _compute_device
++
++    pipe.__class__ = _PlacedPipeline
++    print(f"Execution device pinned to {_compute_device}", flush=True)
+     if compile_transformer:
+         print(
+             f"Compiling action-only MoT blocks with torch.compile(mode={compile_mode!r}, "
+@@ -920,6 +993,7 @@
+             print(f"Loaded fixed T5 embedding from: {fixed_t5_path}, shape={tuple(fixed_prompt_embedding.shape)}")
+ 
+     def inference(self, data):
++        _t_entry = time.perf_counter()
+         images = {
+             'observation.images.cam_high': data['observation.images.cam_high'],  # 3 H W, tensor float64
+             'observation.images.cam_left_wrist': data['observation.images.cam_left_wrist'],  # 3 H W, tensor float64
+@@ -950,7 +1024,7 @@
+         norm_state = norm_state.to(device)
+         if norm_state.ndim == 1:
+             norm_state = norm_state.unsqueeze(0)
+-        norm_state = torch_F.pad(norm_state, (0, 32 - norm_state.shape[-1]), value=0.0)
++        norm_state = torch_F.pad(norm_state, (0, _action_width - norm_state.shape[-1]), value=0.0)
+         prompt_embedding = data.get('prompt_embedding', None)
+         prompt = data.get('prompt', None)
+         if prompt_embedding is None and prompt is None:
+@@ -962,6 +1036,7 @@
+         if str(device).startswith("cuda") and torch.cuda.is_available():
+             torch.cuda.synchronize(torch.device(device))
+         model_start_time = time.perf_counter()
++        _preprocess_s = model_start_time - _t_entry
+         pred_action = pipe(
+             height=dst_size[1],
+             width=dst_size[0],
+@@ -974,7 +1049,7 @@
+             return_dict=False,
+             prompt_embeds=prompt_embedding,
+             prompt=prompt,
+-            action_dim=32,
++            action_dim=_action_width,
+             generator=inference_generator,
+         )
+         if str(device).startswith("cuda") and torch.cuda.is_available():
+@@ -989,6 +1064,24 @@
+         pred_action = pred_action.cpu().numpy()
+         mask = np.array([True] * 6 + [False] + [True] * 6 + [False])
+         pred_action = pred_action[0] + state.repeat(action_chunk, 1).cpu().numpy() * mask
++        _t_exit = time.perf_counter()
++        if timing_jsonl:
++            _rec = {
++                "ts": time.time(),
++                "chunk_idx": int(data.get("chunk_idx", -1)),
++                "episode_idx": int(data.get("episode_idx", -1)),
++                "preprocess_s": _preprocess_s,
++                "model_s": self._last_model_inference_s,
++                "post_s": _t_exit - model_end_time,
++                "total_s": _t_exit - _t_entry,
++            }
++            if str(device).startswith("cuda") and torch.cuda.is_available():
++                _rec["gpu_allocated_gb"] = torch.cuda.memory_allocated() / 1e9
++                _rec["gpu_reserved_gb"] = torch.cuda.memory_reserved() / 1e9
++                _rec["gpu_peak_allocated_gb"] = torch.cuda.max_memory_allocated() / 1e9
++                _rec["gpu_peak_reserved_gb"] = torch.cuda.max_memory_reserved() / 1e9
++            with open(timing_jsonl, "a", encoding="utf-8") as _f:
++                _f.write(json.dumps(_rec) + "\n")
+         return pred_action
+ 
+     pipe.inference = types.MethodType(inference, pipe)
+@@ -1078,10 +1171,14 @@
+     host=DEFAULT_HOST,
+     port=DEFAULT_PORT,
+     replan_steps=None,
++    output_dir=None,
+ ):
+     checkpoint = _require_nonempty_path(checkpoint, "--checkpoint")
+     data_paths = _resolve_data_paths(data_paths)
+     save_dir, _ = get_output_dirs_from_checkpoint(checkpoint)
++    if output_dir:
++        # Default derives from the checkpoint path, i.e. inside the shared model tree.
++        save_dir = os.path.join(output_dir, "open_loop")
+ 
+     action_chunk = 48
+     replan = action_chunk if not replan_steps else max(1, min(int(replan_steps), action_chunk))
+@@ -1295,6 +1392,14 @@
+         help="Pass fullgraph=True to torch.compile for stricter graph capture checks.",
+     )
+     parser.set_defaults(compile_transformer=True)
++    parser.add_argument(
++        "--text-encoder-device",
++        default="cpu",
++        help="Device for the UMT5 text encoder. \"cpu\" keeps 11.36 GB off the GPU when a "
++        "fixed T5 embedding is used; \"auto\" restores the stock all-on-GPU behaviour.",
++    )
++    parser.add_argument("--output-dir", default=None, help="Directory for run artefacts (ref images, placement report).")
++    parser.add_argument("--timing-jsonl", default=None, help="Append one JSON timing record per inference call.")
+     parser.add_argument("--server", action="store_true", help="Run inference server instead of open-loop client.")
+     return parser.parse_args()
+ 
+@@ -1313,6 +1418,9 @@
+         compile_mode=args.compile_mode,
+         compile_fullgraph=args.compile_fullgraph,
+         compile_scope=args.compile_scope,
++        text_encoder_device=args.text_encoder_device,
++        output_dir=args.output_dir,
++        timing_jsonl=args.timing_jsonl,
+     )
+     server = RobotInferenceServer(policy, host=args.host, port=args.port)
+     server.run()
+@@ -1326,6 +1434,7 @@
+         host=args.host,
+         port=args.port,
+         replan_steps=args.replan_steps,
++        output_dir=args.output_dir,
+     )
+ 
+ 

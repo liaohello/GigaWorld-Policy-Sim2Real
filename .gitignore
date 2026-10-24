@@ -14,7 +14,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -231,17 +231,21 @@ secrets.*
 credentials.*
 *_credentials.json
 
-# External code, models, datasets, and experiment artifacts
+# External code, models, datasets, and experiment artifacts.
+# Anchored with a leading slash on purpose: `data/` and `lib/` unanchored
+# silently excluded scripts/data/ and scripts/lib/ from the first commit of
+# this project, which is exactly the kind of bug nobody notices until a fresh
+# clone cannot run anything.
 external/*
 !external/README.md
-data/
-datasets/
-checkpoints/
-models/
-artifacts/
-runs/
-outputs/
-videos/
+/data/
+/datasets/
+/checkpoints/
+/models/
+/artifacts/
+/runs/
+/outputs/
+/videos/
 *.safetensors
 *.gguf
 *.pt
