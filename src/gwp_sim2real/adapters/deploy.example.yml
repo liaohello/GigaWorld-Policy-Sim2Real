@@ -1,0 +1,40 @@
+# Rendered by scripts/setup/install_adapter.sh into
+# $ROBOTWIN_SOURCE_DIR/XPolicyLab/policy/GWP05Native/deploy.yml.
+# The three __PLACEHOLDER__ values come from the environment; nothing here
+# is machine-specific.
+
+policy_name: GWP05Native
+protocol: ws
+host: 127.0.0.1
+port: 19100
+
+bench_name: RoboTwin
+task_name: beat_block_hammer
+ckpt_name: Giga-World-Policy-0.5
+env_cfg_type: aloha_agilex
+seed: 0
+action_type: joint
+eval_batch: false
+
+# This adapter never loads weights; it forwards to the validated PyTorch
+# GigaWorld-Policy server over giga_models.sockets.RobotInferenceClient.
+load_model: true
+gwp_host: 127.0.0.1
+gwp_port: 11444
+gwp_timeout_ms: 120000
+
+# 48-step native action block; execute a short prefix then re-plan.
+action_chunk: 48
+execute_action_chunk: 8
+
+# "embedding" -> send the cached episode T5 embedding (matches the open-loop
+# path); "text" -> send the raw instruction and let the server encode it with
+# the UMT5 encoder parked on CPU (slower, used only as a cross-check).
+prompt_mode: embedding
+t5_index_path: __T5_DIR__/t5_index.json
+t5_embedding_path: __T5_DIR__/episode_000000.pt
+
+# giga-models is pip-installed only in the policy env. The adapter runs in the
+# simulation env, so point it at the workspace checkout instead of installing a
+# second copy (imported lazily, only for the ZMQ client).
+giga_models_path: __GIGA_MODELS_DIR__
