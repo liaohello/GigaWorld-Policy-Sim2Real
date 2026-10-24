@@ -7,7 +7,7 @@ pinned by content hash instead.
 
 | Project | Upstream | Revision | License | Local patches |
 |---|---|---|---|---|
-| GigaWorld-Policy 0.5 | `https://github.com/open-gigaai/giga-world-policy` (per README) | **no Git metadata**: snapshot identified by content hash | **not verified** — the snapshot has no `LICENSE` file and its README makes no license statement | `patch/gwp05_inference_openloop.diff` (206 lines) |
+| GigaWorld-Policy 0.5 | `https://github.com/open-gigaai/giga-world-policy` (address confirmed by the maintainer; the Hugging Face model card `open-gigaai/Giga-World-Policy-0.5` links to it) | **no Git metadata** in the local snapshot: identified by content hash | **not verified for this version** — the snapshot has no `LICENSE` file and its README makes no statement; a license on the upstream repository must be checked against the exact revision used here, and must not be inferred from similarly named projects | `patch/gwp05_inference_openloop.diff` (206 lines) |
 | RoboTwin 2.0 | `https://github.com/RoboTwin-Platform/RoboTwin` (per README) | **no Git metadata**: archive CRC checked during the prior download audit | MIT (`LICENSE`, Copyright (c) 2025 Tianxing Chen) | none in the upstream tree; one added task config and the GWP adapter |
 | wam.cpp | `https://github.com/GigaAI-research/wam.cpp` | `e189107a5c9424781dea58c0481355350a051385` (2026-07-30) | Apache-2.0 | none; build configuration only |
 | llama.cpp | `https://github.com/ggml-org/llama.cpp` | tag `b9866` | MIT (upstream) | none; vendored by wam.cpp's CMake, `WAM_LLAMA_ARCHIVE` points at the locally verified tarball |
@@ -27,14 +27,23 @@ pinned by content hash instead.
 ## License status — open item
 
 The GWP snapshot has no `LICENSE` file and no license statement in its README or
-its report PDF. Until the upstream repository is consulted, this project:
+its report PDF. The upstream address is now confirmed, but that does not settle
+the question: what matters is the license attached to the revision this work used,
+and that revision is identified by hash rather than by commit.
 
-- does not redistribute any GWP source, weights, or derived artifacts;
+Until it is checked against that revision, this project:
+
+- does not redistribute GWP source files, weights, or derived artifacts. An
+  earlier revision of this repository did commit two pristine upstream files
+  (`patch/orig/`) while making that claim; they are now removed, and each patch
+  refers to its original by SHA-256 (`patch/upstream-manifest.json`);
+- keeps the patch diffs, which necessarily quote short context lines — the normal
+  form of a patch, not a redistribution of the file;
 - marks the license as **not verified** rather than guessing one;
 - keeps every derived GGUF and checkpoint outside Git.
 
-If GWP turns out to be under a copyleft license, the diff in
-`patch/gwp05_inference_openloop.diff` needs separate handling.
+If GWP turns out to be under a copyleft license, both diffs in `patch/` need
+separate handling, since a derived patch can itself be a derivative work.
 
 ## Patch inventory
 

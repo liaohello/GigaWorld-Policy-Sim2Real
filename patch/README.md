@@ -1,19 +1,45 @@
 # Local patches
 
 Two patches were needed to run the native RoboTwin + GigaWorld-Policy 0.5
-pipeline. Both are recorded here with the original file next to the patch
-(`orig/`) so the diff can be read without checking anything out.
+pipeline. The diffs are committed; the pristine upstream files are **not**.
 
 | Patch | Applies to | Applied by | Why |
 |---|---|---|---|
 | `gwp05_inference_openloop.diff` | `scripts/inference_openloop.py` in the GWP checkout | `scripts/setup/patch_gwp.py --write` | Component-level device placement, pinned execution device, action width read from the checkpoint, output-directory plumbing, per-call timing |
 | `sapien_urdf_loader.diff` | `sapien/wrapper/urdf_loader.py` in the simulation env's `site-packages` | `scripts/setup/patch_sapien.sh` | Open SRDF as UTF-8; the upstream RoboTwin installer does the same `sed` |
 
-## Why these are patches and not forks
+## Where the original files went
 
-The GWP tree ships without Git metadata, so a fork would be unreviewable. A
-patch against `orig/` is verifiable in one diff, and `patch_gwp.py --check`
-fails loudly if the upstream text has moved.
+A full copy of an upstream source file is not redistributable, and an earlier
+revision of this repository committed two of them under `patch/orig/` while the
+docs claimed no GWP source was redistributed. That contradiction is resolved by
+removing them from Git.
+
+Each patch identifies its original by hash instead — see
+`upstream-manifest.json`:
+
+| File | SHA-256 of the pristine version |
+|---|---|
+| `scripts/inference_openloop.py` | `750625547d2165142828a272fefc50163ea9522dd98be6f4648a26d6dcf3e268` (57 232 B) |
+| `sapien/wrapper/urdf_loader.py` | recorded in the manifest (sapien 3.0.0b1 wheel) |
+
+The pristine copies live outside Git under `$LOCKS_DIR/upstream/`:
+
+- `patch_gwp.py --write` copies the file there before editing, and refuses to run
+  if the anchors match neither the pristine nor the patched form.
+- `patch_sapien.sh` does the same before its `sed`.
+- `patch_gwp.py --check` works without any pristine copy: it classifies the file
+  as `pristine`, `patched`, or `unknown` by anchor presence.
+
+## Why patches and not forks
+
+The GWP tree ships without Git metadata, so a fork would be unreviewable and its
+provenance unverifiable. A patch plus a recorded hash is checkable in one diff,
+and `--check` fails loudly when the upstream text moves.
+
+What a diff necessarily does is quote a handful of context lines from the
+original. That is the normal form of a patch and is not the same as shipping the
+file; the manifest makes the distinction explicit rather than implicit.
 
 ## What was deliberately not patched
 

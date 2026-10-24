@@ -24,7 +24,7 @@ supports it; the full mapping is in [`docs/experiments/evidence-index.md`](docs/
 | M0/M1 — Python inference reproduction | **PASS** | `[48, 14]` finite chunk, model p50 674.9 ms, 13.98 GB peak reserved |
 | M2 — native RoboTwin closed loop | **PASS (interface) / FAIL (task)** | Real policy actions drive the simulator; 0 of 3 seeds succeed |
 | M2 — wam.cpp conversion and self-check | **PASS** | 23.51 GB GGUF, `wam-validate` reports `valid: true` |
-| M2 — wam.cpp numeric parity | **BLOCKED** | Needs ≥ 22 GiB free on one device; inputs are staged |
+| M2 — wam.cpp numeric parity | **BLOCKED** | `cudaMalloc` failed at ~21.9 GiB resident on a shared 24 GiB card; inputs staged, tooling ready |
 | M3 — SO101 adaptation | not started | |
 | M4 — real robot | not started | |
 | M5 — cross-policy comparison | not started | |
@@ -83,9 +83,10 @@ frames, nothing downstream is meaningful.
 
 - **Evidence classes.** Every claim is `measured`, `documented`, `inferred`, or
   `not verified`. A process starting is not a pass.
-- **No private paths.** `bash scripts/checks/no_private_paths.sh` fails the
-  commit if a tracked file contains a home directory, an IP address, or SSH
-  material. Everything machine-specific comes from `.env`.
+- **No private paths.** `python3 scripts/checks/no_private_paths.py` fails the
+  commit if the *staged* content contains a home directory, a routable address,
+  or SSH material. It reads the index, not the working tree. Everything
+  machine-specific comes from `.env`.
 - **Artifacts stay out.** Weights, datasets, videos, GGUF files, and caches are
   referenced through `$RUNS_DIR` / `$ARTIFACTS_DIR` and never committed.
 - **Upstream stays intact.** Third-party trees live outside this repository; the

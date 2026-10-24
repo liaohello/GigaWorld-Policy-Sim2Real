@@ -1,0 +1,25 @@
+{
+  "note": "Pristine upstream files are NOT redistributed in this repository. They are kept outside Git under $LOCKS_DIR/upstream/ and identified by SHA-256, so a patch can still be reviewed against a known original.",
+  "files": [
+    {
+      "file": "scripts/inference_openloop.py",
+      "upstream": "https://github.com/open-gigaai/giga-world-policy",
+      "revision": "unknown \u2014 the snapshot shipped without Git metadata",
+      "license": "not verified \u2014 see docs/experiments/upstream-sources.md",
+      "sha256_pristine": "750625547d2165142828a272fefc50163ea9522dd98be6f4648a26d6dcf3e268",
+      "bytes": 57232,
+      "patch": "patch/gwp05_inference_openloop.diff",
+      "applied_by": "scripts/setup/patch_gwp.py --write"
+    },
+    {
+      "file": "sapien/wrapper/urdf_loader.py",
+      "upstream": "installed package: sapien 3.0.0b1 (site-packages)",
+      "revision": "3.0.0b1",
+      "license": "not verified \u2014 comes from the installed wheel",
+      "sha256_pristine": "eabba86fe7d244ce8d469010f96914010a8883ea5835c86a8bc58be310510683",
+      "bytes": 29356,
+      "patch": "patch/sapien_urdf_loader.diff",
+      "applied_by": "scripts/setup/patch_sapien.sh"
+    }
+  ]
+}

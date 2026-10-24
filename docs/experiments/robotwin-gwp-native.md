@@ -80,7 +80,9 @@ first bridge design would have double-converted.
 ### What is still open
 
 1. **C++ parity has never been executed.** Inputs are staged; a device with
-   ≥ 22 GiB free is the only missing piece.
+   an estimated ~22 GiB of free device memory is the next thing to try. That figure
+   comes from the resident set at load, not from a measured peak, so the first run
+   on a bigger card is informative rather than conclusive.
 2. **Zero-shot success is 0/3.** The interface is proven; the policy is not
    adapted to this embodiment. Fine-tuning belongs to M3, not here.
 3. **GWP license is unverified** — the snapshot ships without a `LICENSE` file.

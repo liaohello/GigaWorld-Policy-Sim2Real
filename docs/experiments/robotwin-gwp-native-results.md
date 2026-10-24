@@ -11,7 +11,9 @@ Commands: [`robotwin-gwp-native-repro.md`](robotwin-gwp-native-repro.md).
 | Check | Value |
 |---|---|
 | Cameras | `cam_head`, `cam_left_wrist`, `cam_right_wrist`, 240×320 uint8 |
-| Pixel range across three sampled frames | min 0, max 255, frames differ |
+| Pixel range within one frame | min 0, max 255 (not blank, not constant) |
+| Consecutive frames | **identical** — the probe steps the scene without commanding joints; `head_frames_distinct = false` |
+| Motion evidence | the collected episode's 116-frame video, not the probe |
 | Expert episode | planning seed 0 failed, seed 1 succeeded (`failed 1 times / 2 tries`) |
 | Output | 1 HDF5 + 1 MP4, 116 frames |
 | Original dataset | 50 files, modification times unchanged |
@@ -148,7 +150,7 @@ Conclusion: 21.9 GiB of resident weights do not fit beside other tenants on a
 | E-1 | Same observation yields different inputs in C++ and PyTorch | wam.cpp's converter forces unclipped z-score; the official script uses q01/q99 min-max | set `q01' = mean - std`, `q99' = mean + std`; then `2(x-(μ-σ))/2σ - 1 = (x-μ)/σ` exactly, so min-max and z-score become algebraically identical without touching weights |
 | E-2 | `wam-inspect` rejects the artifact: "normalization std is too small", index 14 | padding dims 14/15 have zero standard deviation by construction | separate norm file with std = 1 on those dims; under z-score they stay exactly 0, matching PyTorch's zero padding |
 | F-2 | wam.cpp will not configure | system CMake 3.22 lacks `DOWNLOAD_EXTRACT_TIMESTAMP` (needs ≥ 3.24); protoc 3.12 lacks proto3 `optional`; direct GitHub downloads die with a TLS EOF | conda-forge CMake 4.4.4 and protoc 35.1 in the tools env; llama.cpp from the `codeload` archive, SHA-256 matched against the value pinned in `cmake/Dependencies.cmake` |
-| F-3 | C++ inference cannot run | 21.9 GiB resident + 10.8 GiB transient on a shared 24 GiB card | none available; documented as BLOCKED with the ≥ 22 GiB free-memory precondition |
+| F-3 | C++ inference cannot run | `cudaMalloc failed` for a 10 835 MiB T5 shard with ~21.9 GiB already resident, on a 24 091 MiB card shared with other tenants | none available; documented as BLOCKED. The "~22 GiB free" figure is an **estimated attempt condition**, not a measured requirement — the peak working set of a complete inference was never observed |
 
 ## Environment quirks worth remembering
 
