@@ -1,6 +1,20 @@
-# RoboTwin + GWP native validation plan
+# RoboTwin + GWP native validation
 
-Status: **planned; not run from this repository**. The notes below summarize a prior resource audit and must be rechecked on the execution host before use.
+Status: **executed 2026-10-23**. Plan below is kept as written before the run; the
+outcome and the deviations are in [Results](#outcome).
+
+| Stage | Scope | Result |
+|---|---|---|
+| A | Renderer smoke + one expert episode | PASS |
+| B | Demonstration contract, LeRobot v3 conversion, expert replay | PASS |
+| C | Normalization statistics + fixed text embeddings | PASS |
+| D | GWP 0.5 PyTorch open loop, latency and memory | PASS |
+| E | Closed loop on fixed seeds through the native 14-D interface | PASS (interface) / **0 of 3 seeds succeed** |
+| F | wam.cpp GGUF conversion and PyTorch↔C++ parity | PASS (conversion, self-check) / **BLOCKED** (parity) |
+
+Details: [`robotwin-gwp-native-results.md`](robotwin-gwp-native-results.md) ·
+commands: [`robotwin-gwp-native-repro.md`](robotwin-gwp-native-repro.md) ·
+claims→artifacts: [`evidence-index.md`](evidence-index.md).
 
 ## Target and sequence
 
@@ -41,3 +55,36 @@ The audit expected the simulation and policy environments to be isolated. It als
 ## Evidence to save
 
 Save commands, environment locks, source hashes, patches, raw logs, action arrays, videos, simulator success flags, latency/memory metrics, and per-stage PASS/FAIL/BLOCKED status under an external run directory. Keep large data and artifacts out of Git. Do not record public IPs, usernames, SSH commands, credentials, private filesystem paths, or machine identifiers in tracked records.
+
+## Outcome
+
+### What the plan got right
+
+Every caution in the list above materialised as a real problem. The GPU pressure
+point was real — not from the transformer or the VAE, but because
+`pipe.to(device)` also moves the 11.36 GB T5 encoder. The renderer *did* catch an
+exception and still exit 0. The converter *did* delete a same-named target
+directory. The GWP output *was* already denormalized and already absolute, so the
+first bridge design would have double-converted.
+
+### Where execution deviated
+
+| Plan step | What actually happened |
+|---|---|
+| 1. Two isolated environments | **Three** were needed. `lerobot 0.4.4` and the GWP stack cannot share a resolver: `pip install --dry-run` refuses the combination. Split into sim / policy / data. |
+| 3. Convert one, then all 50 | Unchanged, and it paid off: the single-episode check caught the `cam_head` → `cam_high` feature-name rename and the 1.1/255 AV1 delta before 50 episodes were produced. |
+| 4. Run the PyTorch path | Three defects had to be fixed first (`docs/experiments/robotwin-gwp-native-results.md`, P-1/P-2/P-3). None were configuration issues; all were code. |
+| 5. "validate normalization" | Turned into a specification question: wam.cpp forces unclipped z-score, the official PyTorch script uses q01/q99 min-max. Reconciled with an algebraic identity so the weights never change (E-1). |
+| 6. C++ parity | Conversion and self-check passed on the first working build, then stopped at GPU memory. Five device/precision combinations were tried and excluded; the artifact is correct, the card is too small (F-3). |
+
+### What is still open
+
+1. **C++ parity has never been executed.** Inputs are staged; a device with
+   ≥ 22 GiB free is the only missing piece.
+2. **Zero-shot success is 0/3.** The interface is proven; the policy is not
+   adapted to this embodiment. Fine-tuning belongs to M3, not here.
+3. **GWP license is unverified** — the snapshot ships without a `LICENSE` file.
+
+None of these are blocking for the stated goal (a native single-task validation
+of the interface and the inference path). All three are recorded rather than
+smoothed over.
