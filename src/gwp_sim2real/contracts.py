@@ -1,5 +1,8 @@
 """Observation and action contracts for the native 14-D Aloha-AgileX interface.
 
+Normalization is not here: see `gwp_sim2real.normalization`, which operates on
+the measured mean/std and is exercised by tests against the real transforms.
+
 None of these numbers are guesses. They were measured from the stored
 demonstrations and the checkpoint:
 
@@ -112,20 +115,3 @@ def assert_images(vision: Mapping[str, object]) -> None:
     missing = [k for k in CAMERA_KEYS if k not in vision]
     if missing:
         raise ContractError(f"observation is missing cameras {missing}; got {sorted(vision)}")
-
-
-def minmax_to_zscore_equiv(q01, q99):
-    """Return `(q01', q99')` whose min-max normalization equals z-score.
-
-    ``2(x - q01') / (q99' - q01') - 1 == (x - mean) / std`` exactly when
-    ``q01' = mean - std`` and ``q99' = mean + std``.
-
-    This is the whole reconciliation between the official PyTorch path (q01/q99
-    min-max) and wam.cpp's converter (unclipped z-score). The weights never
-    change; only the statistics file handed to the converter does.
-    """
-    q01 = np.asarray(q01, dtype=np.float64)
-    q99 = np.asarray(q99, dtype=np.float64)
-    mean = (q01 + q99) / 2.0
-    std = (q99 - q01) / 2.0
-    return mean - std, mean + std
