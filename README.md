@@ -32,8 +32,8 @@ supports it; the full mapping is in [`docs/experiments/evidence-index.md`](docs/
 ### What these results do and do not establish
 
 - The **interface** between a 14-D Aloha-AgileX simulation and GWP 0.5 works: observations map, actions are accepted, episodes reset, videos and traces are produced.
-- The **zero-shot policy** does not solve `beat_block_hammer`. The commanded joint-1 target drifts from ~0.85 rad to ~44 rad across 50 chunks under two different normalization conventions. That is a policy/embodiment fit problem, and fine-tuning is out of scope for M2.
-- The **C++ path** has never produced an output on this hardware. Its artifact is structurally valid; the card is too small.
+- The **zero-shot policy** does not solve `beat_block_hammer`. The commanded joint-1 target drifts from ~0.85 rad to ~44 rad across 50 chunks under two different normalization conventions. The available evidence is consistent with a policy/embodiment fit issue, but does not isolate that cause; fine-tuning is out of scope for M2.
+- The **C++ path** has not produced an output in the recorded attempt: one 10,835 MiB allocation failed while about 21.9 GiB was already resident. This does not establish the full inference peak or that the hardware is categorically insufficient.
 
 Expert replay and policy control are reported separately everywhere. A replay
 proving the data is good is never evidence that the policy works.
@@ -46,7 +46,7 @@ configs/experiments/     per-specification run parameters
 configs/models/          checkpoint contract (dims, horizon, placement, memory)
 docs/specifications/     stage acceptance criteria, with pass/fail per item
 docs/experiments/        plans, results, reproduction commands, upstream pins
-patch/                   local patches against upstream files, with originals
+patch/                   local patches against upstream files, with originals identified by hash
 scripts/setup/           environment builds, patching, adapter install
 scripts/data/            collection, conversion, contract probes, statistics
 scripts/infer/           GWP server, open-loop benchmark, wam.cpp conversion

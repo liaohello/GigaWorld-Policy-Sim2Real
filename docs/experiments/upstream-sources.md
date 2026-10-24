@@ -7,11 +7,12 @@ pinned by content hash instead.
 
 | Project | Upstream | Revision | License | Local patches |
 |---|---|---|---|---|
-| GigaWorld-Policy 0.5 | `https://github.com/open-gigaai/giga-world-policy` (address confirmed by the maintainer; the Hugging Face model card `open-gigaai/Giga-World-Policy-0.5` links to it) | **no Git metadata** in the local snapshot: identified by content hash | **not verified for this version** — the snapshot has no `LICENSE` file and its README makes no statement; a license on the upstream repository must be checked against the exact revision used here, and must not be inferred from similarly named projects | `patch/gwp05_inference_openloop.diff` (206 lines) |
+| GigaWorld-Policy 0.5 | `https://github.com/open-gigaai/giga-world-policy` (the Hugging Face model card links to it) | **no Git metadata** in the local snapshot: identified by content hash; the pristine inference file hash matches no revision in the public Git history checked 2026-10-24 | **not verified for this code snapshot** — the official code repository has no license file; the model card's Apache-2.0 label covers model weights and does not establish a license for this separate source tree | `patch/gwp05_inference_openloop.diff` (206 lines) |
 | RoboTwin 2.0 | `https://github.com/RoboTwin-Platform/RoboTwin` (per README) | **no Git metadata**: archive CRC checked during the prior download audit | MIT (`LICENSE`, Copyright (c) 2025 Tianxing Chen) | none in the upstream tree; one added task config and the GWP adapter |
 | wam.cpp | `https://github.com/GigaAI-research/wam.cpp` | `e189107a5c9424781dea58c0481355350a051385` (2026-07-30) | Apache-2.0 | none; build configuration only |
 | llama.cpp | `https://github.com/ggml-org/llama.cpp` | tag `b9866` | MIT (upstream) | none; vendored by wam.cpp's CMake, `WAM_LLAMA_ARCHIVE` points at the locally verified tarball |
 | giga-models | bundled in the GWP snapshot under `third_party/giga-models` | follows the GWP snapshot | **not verified** | none (imported read-only, never installed) |
+| SAPIEN | `https://github.com/haosulab/SAPIEN` | tag `3.0.0b1`, commit `d9031a351c39986e51bd0716bc3b51f9a05070d8`; `urdf_loader.py` matches the installed original SHA-256 | MIT (`LICENSE` at this exact tag) | `patch/sapien_urdf_loader.diff` |
 
 ## Identity of the Git-less trees
 
@@ -27,9 +28,10 @@ pinned by content hash instead.
 ## License status — open item
 
 The GWP snapshot has no `LICENSE` file and no license statement in its README or
-its report PDF. The upstream address is now confirmed, but that does not settle
-the question: what matters is the license attached to the revision this work used,
-and that revision is identified by hash rather than by commit.
+its report PDF. Its pristine inference-file hash does not match any revision in
+the public source history checked on 2026-10-24. The Hugging Face model card
+labels the model weights Apache-2.0, but that label does not grant a license for
+the code snapshot or its derived patch.
 
 Until it is checked against that revision, this project:
 
@@ -37,13 +39,13 @@ Until it is checked against that revision, this project:
   earlier revision of this repository did commit two pristine upstream files
   (`patch/orig/`) while making that claim; they are now removed, and each patch
   refers to its original by SHA-256 (`patch/upstream-manifest.json`);
-- keeps the patch diffs, which necessarily quote short context lines — the normal
-  form of a patch, not a redistribution of the file;
+- keeps the GWP patch diff only pending confirmation that its source is licensed
+  for redistribution; a patch may itself be a derivative work;
 - marks the license as **not verified** rather than guessing one;
 - keeps every derived GGUF and checkpoint outside Git.
 
-If GWP turns out to be under a copyleft license, both diffs in `patch/` need
-separate handling, since a derived patch can itself be a derivative work.
+The GWP patch must not be redistributed until its applicable license is
+confirmed. The SAPIEN patch targets MIT-licensed source at the exact pinned tag.
 
 ## Patch inventory
 

@@ -37,6 +37,10 @@ MAX_ABS_TOL=${MAX_ABS_TOL:-}
 export LD_LIBRARY_PATH=$CUDNN_LIB:/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-}
 mkdir -p "$OUTDIR" "${LOGS_DIR:?set LOGS_DIR}"
 
+# Only count outputs from this invocation. A stale action file left by an
+# earlier run must not turn a failed prediction into a false success.
+rm -f "$OUTDIR/cpp_action_cuda.npy" "$OUTDIR/cpp_action.npy"
+
 echo "=== artifact ==="
 ls -la "$GGUF" "$GGUF.manifest.json" 2>/dev/null
 

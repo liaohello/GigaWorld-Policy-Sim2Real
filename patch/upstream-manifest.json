@@ -14,8 +14,8 @@
     {
       "file": "sapien/wrapper/urdf_loader.py",
       "upstream": "installed package: sapien 3.0.0b1 (site-packages)",
-      "revision": "3.0.0b1",
-      "license": "not verified \u2014 comes from the installed wheel",
+      "revision": "3.0.0b1; upstream tag commit d9031a351c39986e51bd0716bc3b51f9a05070d8",
+      "license": "MIT; verified at the corresponding upstream tag",
       "sha256_pristine": "eabba86fe7d244ce8d469010f96914010a8883ea5835c86a8bc58be310510683",
       "bytes": 29356,
       "patch": "patch/sapien_urdf_loader.diff",
