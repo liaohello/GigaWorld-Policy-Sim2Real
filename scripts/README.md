@@ -15,7 +15,7 @@ that needs a path it did not receive fails at the first line with
 | `data/` | `probe_hdf5.py`, `collect_expert.sh`, `convert_lerobot.sh`, `check_lerobot.py`, `compute_norm.sh`, `compute_t5.py`, `norm_convention.py` | A–C |
 | `infer/` | `gwp_server.sh`, `openloop_bench.py`, `make_wam_profile.py`, `norm_for_gguf.py`, `wam_convert.sh`, `wam_infer.sh` | D, F |
 | `evaluate/` | `smoke_env.py`, `expert_replay.py`, `closed_loop.sh`, `make_demo_video.sh` | A, E |
-| `checks/` | `no_private_paths.sh`, `source_baseline.py` | any |
+| `checks/` | `no_private_paths.py`, `source_baseline.py` | any |
 | `lib/` | `rt_args.py` | shared |
 
 `train/` is intentionally empty: no fine-tuning has been run, and an empty
