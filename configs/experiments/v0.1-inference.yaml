@@ -1,0 +1,5 @@
+specification: docs/specifications/v0.1-inference.md
+model_config: configs/models/gwp05.yaml
+observation_source: null # Set to a local recorded sample outside Git.
+output_dir_env: RUNS_DIR
+random_seed: 0

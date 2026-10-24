@@ -218,3 +218,41 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local resource locations and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_ed25519*
+id_rsa*
+secrets.*
+credentials.*
+*_credentials.json
+
+# External code, models, datasets, and experiment artifacts
+external/*
+!external/README.md
+data/
+datasets/
+checkpoints/
+models/
+artifacts/
+runs/
+outputs/
+videos/
+*.safetensors
+*.gguf
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.hdf5
+*.mp4
+
+# Local IDE and OS state
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini

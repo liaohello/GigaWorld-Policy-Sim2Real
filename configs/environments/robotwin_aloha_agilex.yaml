@@ -1,0 +1,15 @@
+environment:
+  name: robotwin2
+  task: beat_block_hammer
+  split: demo_clean
+  embodiment: aloha_agilex
+  action_dimension: 14
+  source_dir_env: ROBOTWIN_SOURCE_DIR
+  assets_dir_env: ROBOTWIN_ASSETS_DIR
+  data_dir_env: ROBOTWIN_DATA_DIR
+
+evaluation:
+  seeds: [0, 1, 2]
+  episodes_per_seed: 1
+
+# This is a starting record of the native target, not a validated runtime config.
