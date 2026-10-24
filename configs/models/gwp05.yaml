@@ -1,0 +1,46 @@
+# Model contract for the GigaWorld-Policy 0.5 checkpoint.
+#
+# Only the fields the bridge depends on are recorded here; this is not a copy of
+# the upstream `config.json`. Every value was read from the checkpoint itself
+# (config.json plus encoder weight shapes), not from a paper or a README.
+
+name: Giga-World-Policy-0.5
+class_name: CasualWorldActionTransformer_MoT
+diffusers_version: 0.36.0
+
+action:
+  # `in_action_channels` in config.json; state_encoder.in_proj.weight and
+  # action_encoder.in_proj.weight are both [2, 16, 128]. The official inference
+  # script hardcodes 32 here, which fails with a bmm shape mismatch.
+  channels: 16
+  # 6 left arm + 1 left gripper + 6 right arm + 1 right gripper; the remaining
+  # 2 channels are zero padding that exists only to match the projection layer.
+  real_dim: 14
+  padding: 2
+  horizon: 48
+  # Output is already denormalized and already absolute (delta added back on the
+  # joint dims). Downstream code must not re-apply either transform.
+  postprocessing: [denormalize_minmax, delta_to_absolute]
+
+text:
+  encoder: umt5-xxl
+  precision: bf16
+  seq_len: 512
+  dim: 4096
+  # A fixed embedding path means the encoder is never executed: inference()
+  # receives prompt_embeds and guidance_scale = 0.0 disables the uncond branch.
+  expected_device: cpu
+
+runtime:
+  precision: bf16
+  torch_compile: false
+  device_map:
+    text_encoder: cpu
+    transformer: cuda
+    vae: cuda
+
+memory:
+  # Measured after load, bf16, T5 on CPU.
+  allocated_gb: 13.47
+  reserved_gb: 13.66
+  peak_reserved_gb: 13.98
