@@ -1,10 +1,97 @@
-# Repository instructions
+# GigaWorld-Policy-Sim2Real 项目代理规则
 
-- Keep this repository focused on GigaWorld-Policy research, reproducibility, data/action contracts, simulation evaluation, and later real-robot adaptation.
-- Read the relevant upstream README and license before integrating external code. Record exact commit/version and local patches. Keep upstream repositories outside tracked Git content.
-- Store checkpoints, datasets, videos, caches, and environments outside the repository. Use environment variables for local paths; commit only sanitized examples.
-- Never commit passwords, tokens, private keys, public IPs, SSH commands, personal paths, or machine-specific identifiers. Review the staged diff before every commit.
-- Keep simulation and policy dependencies isolated. Do not alter a shared base environment for this project.
-- Mark evidence accurately as measured, documented, inferred, or not yet verified. A process starting is not an inference or simulation pass.
-- For RoboTwin native validation, preserve the 14-D Aloha-AgileX action contract. Label expert replay and policy control distinctly; never use a substitute action stream to claim policy success.
-- Keep the workbench platform separate; connect through explicit observation, policy, and action interfaces.
+本仓库用于 GigaWorld-Policy 的研究复现、数据与动作契约、仿真评测，以及后续真实机器人适配。目标是交付可验证、可再次执行的实验结果，并准确记录来源、环境、修改、证据与限制。
+
+## 1. 范围与任务边界
+
+- 围绕当前任务推进官方推理复现、延迟与显存测量、RoboTwin 原生闭环、SO101 适配或策略对比；具体阶段与验收标准以 `README.md` 和相关 `docs/specifications/` 为准。
+- 按用户要求决定停止点。资源查找不自动扩大为安装、训练或购买；单次实验不扩大为平台建设、全面重构或无关清理。
+- 工作台平台保持独立，通过明确的 observation、policy、action 接口连接，不将平台产品流程或内部实现引入本仓库。
+- 用户最新明确要求优先于本文历史约定；涉及子目录时读取适用的补充规则。只询问影响方向、费用或无法自行确定的必要信息，其余常规选择自主推进。
+
+## 2. 先了解现有资产
+
+开始前按需读取根目录 `README.md`、目标阶段规范、相关实验记录及脚本说明。先确认已有源码、模型、数据、专用环境、服务与历史结果，避免重复下载或部署。
+
+| 位置 | 责任与使用方式 |
+| --- | --- |
+| `configs/` | 环境、模型契约与实验参数；只提交脱敏配置 |
+| `docs/specifications/` | 各阶段目标与验收标准 |
+| `docs/experiments/` | 来源、环境锁定、复现步骤、结果与证据索引 |
+| `src/gwp_sim2real/` | 观测与动作契约、推理客户端和仿真适配 |
+| `scripts/` | 环境准备、数据处理、推理、评测和检查入口 |
+| `tests/` | 无需 GPU 或仿真器的契约测试 |
+| `patch/` | 对上游的最小补丁及原始文件身份记录 |
+| `external/` | 外部源码安装说明；不纳入完整上游源码 |
+
+目录说明和历史记录不是实时状态。操作前核对实际路径、版本、服务、GPU 占用与磁盘余量。默认只修改任务相关文件；版本操作前确认仓库边界和已有工作区改动，不覆盖他人修改。
+
+## 3. 上游来源与依赖隔离
+
+- 集成外部代码前阅读相关上游 README、许可证、依赖文件和目标入口。优先使用官方仓库、项目页、模型与数据页面。
+- 在 `docs/experiments/upstream-sources.md` 记录直接来源、精确 commit/tag 或发布版本、许可证与本地补丁。无 Git 元数据的源码归档记录内容哈希，不能只记录可变分支名或目录名。
+- 上游仓库放在本仓库之外，不将完整第三方源码纳入 tracked Git 内容；必要修改保持最小范围，以 `patch/` 保存差异并记录原始文件哈希和应用方式。
+- 核对权重、数据、子模块与 Git LFS 对象的实际完整性。文件名、指针文件或下载命令成功不能单独证明资源完整。
+- 检查任务所需的系统、驱动、CUDA、框架、显存、内存、磁盘与网络条件，优先复用兼容的现有专用环境。
+- 仿真与策略依赖保持隔离；数据处理与工具环境遵循现有环境划分。不为本项目修改共享 base、系统依赖或其他项目环境，也不为统一版本强行升级。
+- 检查点、数据集、视频、缓存、环境、GGUF 和运行产物存放在仓库之外。通过环境变量传入本机路径，仓库仅保留脱敏示例，变量名以 `.env.example` 为准。
+
+## 4. 执行与验证
+
+- 先明确本次目标是安装、最小推理、接口闭环、任务成功、数值一致性还是训练指标复现；这些结果不能相互替代。未指定时优先运行与目标相关的官方最小流程。
+- 优先沿用现有脚本和上游入口。先验证小样例或最短流程，再按任务目标扩大数据量、种子数和运行规模。
+- 保留关键错误与日志，定位具体原因；不以模拟输出、静默降级、替代策略或无依据默认值掩盖失败。替换模型、简化场景、改变精度、数据或算法时明确验证边界。
+- 验证覆盖受影响的契约与入口。纯文档修改检查内容和差异即可；代码修改运行适用测试；推理和仿真结论必须有对应实际输出，不能用导入成功或进程启动替代。
+- 对下载、网络、进程和硬件边界设置有依据的重试与退出条件，不无限重试、不泛化吞掉异常。
+- 长任务记录会话或进程、日志、产物位置和停止方式。成功提交任务不代表运行完成。
+- 复用相关实验文档记录执行日期、环境、版本、实际命令、参数、种子、结果与证据位置；必要时更新 `docs/experiments/evidence-index.md`。不强制为每次普通操作另建报告。
+
+### RoboTwin 与动作契约
+
+- 原生验证保留 **14-D Aloha-AgileX 动作契约**。核对观测、相机、状态、动作顺序、单位、归一化、时间步、chunk 和重置行为，不用其他具身契约冒充原生验证。
+- **专家回放（expert replay）与策略控制（policy control）分开标注**。回放成功只支持数据或仿真链路验证，不能用替代动作流宣称策略成功。
+- 遵循相关复现文档的渲染与数据检查门槛。接口接受动作、闭环运行和任务成功分别验收；记录失败率和异常动作，不将接口通过写成任务通过。
+- Python/C++ 数值一致性比较使用可对应的输入、权重、归一化和配置；转换完成或自检通过不等于推理输出一致。内存分配失败只支持本次失败事实，不能据此宣称完整峰值或硬件必然不足。
+
+### 证据标注
+
+每项结论准确区分：`measured`（已实测）、`documented`（仅文档确认）、`inferred`（推断）或 `not verified`（尚未验证）。历史成功不写成本次实测；建议、计划和子任务输出不当作实现或验收证据。记录与实际结果冲突时依据可核查证据说明差异。
+
+## 5. 服务器与在线资源
+
+- 优先使用已授权连接和项目现有工具，环境探测以只读检查为主；实际运行前检查 GPU 当前占用、空闲显存、磁盘、端口及相关服务。
+- 仅在授权目录和专用环境内操作，不抢占其他任务 GPU、不停止他人进程、不删除未知数据、不修改全局配置。服务默认本地绑定，新增公网暴露须有明确需要与授权。
+- 同步前核对源、目标和范围，保留服务器独有修改；不无差别覆盖或删除。源码同步与运行产物分别验证，按影响范围重建、重启并核验。
+- 外部算力按单卡显存、整机资源、时长、地区和预算比较。价格、库存、计费与停机规则查询当前官方页面，注明日期、币种、单位及估算假设；查找或推荐不等于授权购买或开通持续计费实例。
+- 在线资源优先少量相关官方来源，提供直接链接并说明许可、访问条件和用途。时效信息联网核验；区分主页、演示、源码、模型和自部署服务的可用性。
+- 访问测试说明位置与范围：本地可达不代表服务器可下载，HTTP 成功不代表完整下载或核心功能通过。报告实际访问错误，不把一次失败说成永久失效。
+
+## 6. 安全、版本与真实硬件
+
+- 不在提交、笔记、日志或回复中暴露密码、令牌、私钥等凭据。**不得提交公网 IP、SSH 命令、个人绝对路径或机器特有标识**；运行记录使用环境变量和脱敏标识。
+- 每次提交前审查 staged diff，并按项目现有方式执行 `scripts/checks/no_private_paths.py`；该检查读取暂存区，不能将其通过当作未暂存内容已检查。未经要求不自行推送或对外发布。
+- 自主完成授权范围内必要且可逆的操作；费用、破坏性清理、共享环境变更、对外发布和真实硬件动作依据已有授权与实际影响判断，只询问缺少的必要授权。
+- 实机适配保留控制权、限位、急停和硬件保护；仿真验证不能自动视为实机安全验证，不因仿真成功自动执行真实机器人动作。
+
+## 7. 多智能体分工与模型约定
+
+按当前运行时实际报告的主智能体模型族选择以下**目标配置**；不得仅凭本文宣称配置已生效，也不因本项目任务自动修改全局配置。
+
+| 模型族 | 主智能体目标 | 子智能体目标 |
+| --- | --- | --- |
+| GPT | **GPT-6.1 Sol Max**：`gpt-6.1-sol` / `max` | **GPT-6 Luna Low**：`gpt-6-luna` / `low` |
+| DeepSeek | **DeepSeek Flash max**：`deepseek-flash` / `max` | **DeepSeek Flash low**：`deepseek-flash` / `low` |
+
+- 实际模型与推理强度由会话、配置和工具能力决定。无法确认模型族或无法提供对应目标时说明限制，不伪造模型标识、参数或切换成功；需要切换主模型时使用平台支持的方式。
+- 主智能体负责理解目标、阅读关键文档、制定方案、资源取舍、修改文件、安装部署、执行验证、整合证据和最终结论。
+- 子智能体统一使用 `default` 角色，仅承担边界明确的来源检索、代码探索、依赖对照和事实核验。不得创建、修改或删除文件，不运行会写入项目的测试、安装、构建或部署，不提交或推送，不作最终方案裁决，也不派生子智能体。只读是行为约束，不宣称为独立权限沙箱。
+- 有可独立完成并节省上下文或等待时间的检索工作时主动委派；简单定位、单处修改和不可拆分的判断由主智能体完成，不为凑数量启动子智能体。
+- 默认派发使用 `agent_type = "default"`、`fork_turns = "none"`，提供完整且最小的上下文。角色已固定对应模型与强度时不再显式覆盖；可配置时选择表中对应子模型。角色固定值与目标模型族不符且工具无法选择对应配置时，由主智能体接管，不以不符配置冒充目标。
+- 最多同时运行 3 个子智能体，并服从运行时更低上限；不创建用户侧新聊天或额外 CLI 绕过约定。
+- 每个子任务明确工作目录、一个具体问题、允许来源、必要背景、只读边界与交付证据。独立任务同轮派发，等待期间推进不依赖结果且不改变待核查来源的工作。
+- 复用已有子智能体追问，使用工具等待，避免短间隔轮询。主智能体不重复同范围检索；证据不足、矛盾或来源变化时针对性复核。超时不代表完成、失败或取消。
+- 子任务按“已完成 / 部分完成 / 受阻”返回事实摘要，附路径、行号、符号或直接链接，区分事实、推断与未覆盖范围。主智能体交付前收齐必需结果，明确停止或接管未完成任务。
+
+## 8. 沟通与交付
+
+默认中文，先说明结果，再提供可执行入口、必要证据和剩余阻碍。资源比较可用简表；实验交付说明实际验证范围，失败时交代已完成部分、具体原因和最小下一步。达到用户要求后停止，不追加无实际价值的全面审核或测试扩建。
